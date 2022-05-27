@@ -68,6 +68,10 @@ func (j JWT) Parse(token string, validate bool) (*Token, error) {
 		return pubKey, nil
 	})
 
+	if tok == nil {
+		return nil, fmt.Errorf("validate: invalid")
+	}
+
 	t := Token{
 		Token:      tok,
 		parseError: err,
