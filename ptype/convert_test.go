@@ -2,6 +2,7 @@ package ptype
 
 import (
 	"testing"
+	"time"
 )
 
 var (
@@ -9,29 +10,27 @@ var (
 	simpleInt    = 1
 	simpleBool   = true
 	simpleString = "simple"
+	simpleTime   = time.Time{}
 )
 
 func TestPFloat64(t *testing.T) {
-	type args struct {
-		num *float64
-	}
-	tests := []struct {
+	type args[T any] struct {
 		name string
-		args args
-		want float64
-	}{
+		v    *T
+		want T
+	}
+
+	tests := []args[float64]{
 		{
 			name: "simple",
-			args: args{
-				num: &simpleFloat,
-			},
+			v:    &simpleFloat,
 			want: simpleFloat,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := PFloat64(tt.args.num); got != tt.want {
-				t.Errorf("PFloat64() = %v, want %v", got, tt.want)
+			if got := Deref(tt.v); got != tt.want {
+				t.Errorf("Deref(float64) = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -56,8 +55,8 @@ func TestIntP(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IntP(tt.args.i); *got != *tt.want {
-				t.Errorf("IntP() = %v, want %v", got, tt.want)
+			if got := Ptr(tt.args.i); *got != *tt.want {
+				t.Errorf("Ptr(*int) = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -82,8 +81,8 @@ func TestFloat64P(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Float64P(tt.args.f); *got != *tt.want {
-				t.Errorf("Float64P() = %v, want %v", got, tt.want)
+			if got := Ptr(tt.args.f); *got != *tt.want {
+				t.Errorf("Ptr(*float64) = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -108,8 +107,8 @@ func TestStringP(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := StringP(tt.args.str); *got != *tt.want {
-				t.Errorf("StringP() = %v, want %v", got, tt.want)
+			if got := Ptr(tt.args.str); *got != *tt.want {
+				t.Errorf("Ptr(*string) = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -134,8 +133,8 @@ func TestPString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := PString(tt.args.str); got != tt.want {
-				t.Errorf("PString() = %v, want %v", got, tt.want)
+			if got := Deref(tt.args.str); got != tt.want {
+				t.Errorf("Deref(string) = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -160,7 +159,7 @@ func TestPInt(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := PInt(tt.args.i); got != tt.want {
+			if got := Deref(tt.args.i); got != tt.want {
 				t.Errorf("PInt() = %v, want %v", got, tt.want)
 			}
 		})
@@ -186,8 +185,60 @@ func TestBoolP(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := BoolP(tt.args.b); *got != *tt.want {
-				t.Errorf("BoolP() = %v, want %v", got, tt.want)
+			if got := Ptr(tt.args.b); *got != *tt.want {
+				t.Errorf("Ptr(*boolean) = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTimeP(t *testing.T) {
+	type args struct {
+		v time.Time
+	}
+	tests := []struct {
+		name string
+		args args
+		want *time.Time
+	}{
+		{
+			name: "simple",
+			args: args{
+				v: simpleTime,
+			},
+			want: &simpleTime,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Ptr(tt.args.v); *got != *tt.want {
+				t.Errorf("Ptr(*time.Time) = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestPTime(t *testing.T) {
+	type args struct {
+		v *time.Time
+	}
+	tests := []struct {
+		name string
+		args args
+		want time.Time
+	}{
+		{
+			name: "simple",
+			args: args{
+				v: &simpleTime,
+			},
+			want: simpleTime,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Deref(tt.args.v); got != tt.want {
+				t.Errorf("Ptr(time.Time) = %v, want %v", got, tt.want)
 			}
 		})
 	}
