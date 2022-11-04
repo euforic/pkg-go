@@ -8,8 +8,8 @@ import (
 
 func TestCompare(t *testing.T) {
 	type args struct {
-		s1 interface{}
-		s2 interface{}
+		s1 []string
+		s2 []string
 	}
 	tests := []struct {
 		name string
@@ -18,7 +18,7 @@ func TestCompare(t *testing.T) {
 	}{
 		{name: "TestCompareTrue1", args: args{[]string{"one", "sa12d"}, []string{"sa12d", "one"}}, want: true},
 		{name: "TestCompareTrue2", args: args{[]string{"one", "sa12d"}, []string{"one", "sa12d"}}, want: true},
-		{name: "TestCompareFalse", args: args{[]string{"one", "sa12d"}, []int{1, 213}}, want: false},
+		{name: "TestCompareFalse", args: args{[]string{"one", "sa12d"}, []string{"1", "213"}}, want: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -31,8 +31,8 @@ func TestCompare(t *testing.T) {
 
 func TestOrderedCompare(t *testing.T) {
 	type args struct {
-		s1 interface{}
-		s2 interface{}
+		s1 []string
+		s2 []string
 	}
 	tests := []struct {
 		name string
@@ -41,7 +41,7 @@ func TestOrderedCompare(t *testing.T) {
 	}{
 		{name: "TestOrderedCompareFalse1", args: args{[]string{"one", "sa12d"}, []string{"sa12d", "one"}}, want: false},
 		{name: "TestOrderedCompareTrue", args: args{[]string{"one", "sa12d"}, []string{"one", "sa12d"}}, want: true},
-		{name: "TestOrderedCompareFalse2", args: args{[]string{"one", "sa12d"}, []int{1, 213}}, want: false},
+		{name: "TestOrderedCompareFalse2", args: args{[]string{"one", "sa12d"}, []string{"1", "213"}}, want: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -54,8 +54,8 @@ func TestOrderedCompare(t *testing.T) {
 
 func TestContains(t *testing.T) {
 	type args struct {
-		s interface{}
-		e interface{}
+		s []string
+		e string
 	}
 	tests := []struct {
 		name string
@@ -63,8 +63,8 @@ func TestContains(t *testing.T) {
 		want bool
 	}{
 		{name: "TestContainsTrue1", args: args{[]string{"one", "sa12d"}, "one"}, want: true},
-		{name: "TestContainsFalse", args: args{[]string{"one", "sa12d"}, 1}, want: false},
-		{name: "TestContainsTrue2", args: args{[]string{"one", "sa12d"}, []string{"sa12d", "one"}}, want: false},
+		{name: "TestContainsFalse", args: args{[]string{"one", "sa12d"}, "1"}, want: false},
+		{name: "TestContainsTrue2", args: args{[]string{"one", "sa12d"}, "sa12d"}, want: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -75,59 +75,32 @@ func TestContains(t *testing.T) {
 	}
 }
 
-func Test_convertSliceToInterface(t *testing.T) {
-	type args struct {
-		s interface{}
-	}
-	var iOne interface{} = []int{1, 2, 3}
-
-	var fOne []interface{}
-	fOne = append(fOne, 1)
-	fOne = append(fOne, 2)
-	fOne = append(fOne, 3)
-
-	tests := []struct {
-		name      string
-		args      args
-		wantSlice []interface{}
-	}{
-		{name: "TestConvertSliceToInferface", args: args{iOne}, wantSlice: fOne},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotSlice := convertSliceToInterface(tt.args.s); !cmp.Equal(gotSlice, tt.wantSlice) {
-				t.Errorf("convertSliceToInterface() = %v, want %v", gotSlice, tt.wantSlice)
-			}
-		})
-	}
-}
-
 func TestReverse(t *testing.T) {
-	in1 := make([]interface{}, 0)
+	in1 := make([]string, 0)
+	in1 = append(in1, "2")
+	in1 = append(in1, "4.2")
 	in1 = append(in1, "1")
-	in1 = append(in1, 4.2)
-	in1 = append(in1, 1)
-	out1 := make([]interface{}, 0)
-	out1 = append(out1, 1)
-	out1 = append(out1, 4.2)
+	out1 := make([]string, 0)
 	out1 = append(out1, "1")
+	out1 = append(out1, "4.2")
+	out1 = append(out1, "2")
 
-	in2 := make([]interface{}, 0)
-	in2 = append(in2, 1)
-	in2 = append(in2, 2)
-	in2 = append(in2, 3)
-	out2 := make([]interface{}, 0)
-	out2 = append(out2, 3)
-	out2 = append(out2, 2)
-	out2 = append(out2, 1)
+	in2 := make([]string, 0)
+	in2 = append(in2, "1")
+	in2 = append(in2, "2")
+	in2 = append(in2, "3")
+	out2 := make([]string, 0)
+	out2 = append(out2, "3")
+	out2 = append(out2, "2")
+	out2 = append(out2, "1")
 
 	type args struct {
-		s []interface{}
+		s []string
 	}
 	tests := []struct {
 		name string
 		args args
-		want []interface{}
+		want []string
 	}{
 		{name: "Reverse1", args: args{s: in1}, want: out1},
 		{name: "Reverse2", args: args{s: in2}, want: out2},
@@ -164,7 +137,7 @@ func TestFastContains(t *testing.T) {
 
 func BenchmarkContains10(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		Contains([]string{"one", "ten"}, []string{"ten", "one"})
+		Contains([]string{"one", "ten"}, "ten")
 	}
 }
 
