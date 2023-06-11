@@ -1,37 +1,28 @@
 package sliceutil
 
 import (
-	"reflect"
 	"sort"
 )
 
 // Compare will check if two slices are equal
 // even if they aren't in the same order
-// Inspired by github.com/stephanbaker white board sudo code
-func Compare(s1, s2 interface{}) bool {
+func Compare[K comparable](s1 []K, s2 []K) bool {
 	if s1 == nil || s2 == nil {
 		return false
 	}
 
-	// Convert slices to correct type
-	slice1 := convertSliceToInterface(s1)
-	slice2 := convertSliceToInterface(s2)
-	if slice1 == nil || slice2 == nil {
-		return false
-	}
-
-	if len(slice1) != len(slice2) {
+	if len(s1) != len(s2) {
 		return false
 	}
 
 	// setup maps to store values and count of slices
-	m1 := make(map[interface{}]int)
-	m2 := make(map[interface{}]int)
+	m1 := make(map[K]int)
+	m2 := make(map[K]int)
 
-	for i := 0; i < len(slice1); i++ {
+	for i := 0; i < len(s1); i++ {
 		// Add each value to map and increment for each found
-		m1[slice1[i]]++
-		m2[slice2[i]]++
+		m1[s1[i]]++
+		m2[s2[i]]++
 	}
 
 	for key := range m1 {
@@ -44,7 +35,7 @@ func Compare(s1, s2 interface{}) bool {
 }
 
 // OrderedCompare will check if two slices are equal, taking order into consideration.
-func OrderedCompare(s1, s2 interface{}) bool {
+func OrderedCompare[K comparable](s1 []K, s2 []K) bool {
 	//If both are nil, they are equal
 	if s1 == nil && s2 == nil {
 		return true
@@ -55,23 +46,19 @@ func OrderedCompare(s1, s2 interface{}) bool {
 		return false
 	}
 
-	// Convert slices to correct type
-	slice1 := convertSliceToInterface(s1)
-	slice2 := convertSliceToInterface(s2)
-
 	//If both are nil, they are equal
-	if slice1 == nil || slice2 == nil {
+	if s1 == nil || s2 == nil {
 		return false
 	}
 
 	//If the lengths are different, the slices are not equal
-	if len(slice1) != len(slice2) {
+	if len(s1) != len(s2) {
 		return false
 	}
 
 	//Loop through and compare the slices at each index
-	for i := 0; i < len(slice1); i++ {
-		if slice1[i] != slice2[i] {
+	for i := 0; i < len(s1); i++ {
+		if s2[i] != s1[i] {
 			return false
 		}
 	}
@@ -81,19 +68,7 @@ func OrderedCompare(s1, s2 interface{}) bool {
 }
 
 // Contains checks if a slice contains an element
-func Contains(s interface{}, e interface{}) bool {
-	slice := convertSliceToInterface(s)
-
-	for _, a := range slice {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}
-
-// ContainsString checks if a slice contains a string
-func ContainsString(s []string, e string) bool {
+func Contains[K comparable](s []K, e K) bool {
 	for _, a := range s {
 		if a == e {
 			return true
@@ -102,26 +77,9 @@ func ContainsString(s []string, e string) bool {
 	return false
 }
 
-// convertSliceToInterface takes a slice passed in as an interface{}
-// then converts the slice to a slice of interfaces
-func convertSliceToInterface(s interface{}) (slice []interface{}) {
-	v := reflect.ValueOf(s)
-	if v.Kind() != reflect.Slice {
-		return nil
-	}
-
-	length := v.Len()
-	slice = make([]interface{}, length)
-	for i := 0; i < length; i++ {
-		slice[i] = v.Index(i).Interface()
-	}
-
-	return slice
-}
-
 // Reverse reverses slices of any type
-func Reverse(s []interface{}) []interface{} {
-	a := make([]interface{}, len(s))
+func Reverse[K comparable](s []K) []K {
+	a := make([]K, len(s))
 	copy(a, s)
 
 	for i := len(a)/2 - 1; i >= 0; i-- {
