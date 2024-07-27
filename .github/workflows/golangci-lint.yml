@@ -13,11 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        directory: [config, jwt, ptype, rsa, sliceutil ]
+        directory: [./config, ./ethwallet, ./jwt, ./mapsi, ./ptype, ./rsa, ./sliceutil, ./tbljson ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2.5.2
+        uses: golangci/golangci-lint-action@v6.0.1
         with:
           # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
           version: latest

@@ -4,7 +4,9 @@ use (
 	./config
 	./ethwallet
 	./jwt
+	./mapsi
 	./ptype
 	./rsa
 	./sliceutil
+	./tbljson
 )
