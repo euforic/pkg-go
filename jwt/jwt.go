@@ -2,13 +2,29 @@ package jwt
 
 import (
 	"crypto/rsa"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 )
 
-// JWT
+var (
+	// ErrTokenParse is returned when the token could not be parsed
+	ErrTokenParse = errors.New("error parsing token")
+	// ErrTokenValidate is returned when the token could not be validated
+	ErrTokenValidate = errors.New("error validating token")
+	// ErrTokenSign is returned when the token could not be signed
+	ErrTokenSign = errors.New("error signing token")
+	// ErrTokenCreate is returned when the token could not be created
+	ErrTokenCreate = errors.New("error creating token")
+	// ErrTokenExpired is returned when the token is expired
+	ErrTokenExpired = errors.New("token expired")
+	// ErrTokenInvalid is returned when the token is invalid
+	ErrTokenInvalid = errors.New("token invalid")
+)
+
+// JWT is a struct that holds the private and public keys
 type JWT struct {
 	privateKey *rsa.PrivateKey
 	publicKey  *rsa.PublicKey
@@ -28,6 +44,7 @@ func (j JWT) CreatAndSign(ttl time.Duration, claims jwt.MapClaims) (string, erro
 	if err != nil {
 		return "", err
 	}
+
 	return j.Sign(t)
 }
 
@@ -57,7 +74,7 @@ func (j JWT) Sign(token *Token) (string, error) {
 func (j JWT) Parse(token string, validate bool) (*Token, error) {
 	tok, err := jwt.Parse(token, func(jwtToken *jwt.Token) (interface{}, error) {
 		if _, ok := jwtToken.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("unexpected method: %s", jwtToken.Header["alg"])
+			return nil, fmt.Errorf("unexpected method %s: %w", jwtToken.Header["alg"], ErrTokenParse)
 		}
 
 		var pubKey interface{} = j.publicKey
@@ -69,20 +86,19 @@ func (j JWT) Parse(token string, validate bool) (*Token, error) {
 	})
 
 	if tok == nil {
-		return nil, fmt.Errorf("validate: invalid")
+		return nil, fmt.Errorf("parse: %w", ErrTokenParse)
 	}
 
 	t := Token{
-		Token:      tok,
-		parseError: err,
+		Token: tok,
 	}
 
 	if err != nil && !validate && err.Error() != "key is of invalid type" {
-		return nil, fmt.Errorf("validate: %w", err)
+		return nil, fmt.Errorf("parse: %w", err)
 	}
 
 	if !tok.Valid && validate {
-		return nil, fmt.Errorf("validate: invalid")
+		return nil, fmt.Errorf("parse: %w", ErrTokenValidate)
 	}
 
 	return &t, nil

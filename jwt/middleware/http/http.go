@@ -12,15 +12,27 @@ import (
 func TokenMiddleware(j *jwt.JWT, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := strings.Split(r.Header.Get("Authorization"), " ")
-		if len(authHeader) < 2 {
+
+		// Check if the token is present
+		tokenPartsLen := 2
+		if len(authHeader) != tokenPartsLen {
 			next.ServeHTTP(w, r)
+
 			return
 		}
 
-		token, _ := j.Parse(authHeader[1], true)
+		// Parse the token
+		token, err := j.Parse(authHeader[1], true)
+		if err != nil {
+			next.ServeHTTP(w, r)
 
-		ctx := context.WithValue(context.Background(), ContextKey, token)
-		r = r.WithContext(ctx)
+			return
+		}
+
+		// Add the token to the context
+		r = r.WithContext(context.WithValue(r.Context(), ContextKey, token))
+
+		// Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(w, r)
 	})
 }

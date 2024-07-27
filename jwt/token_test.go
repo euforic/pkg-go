@@ -1,436 +1,448 @@
 package jwt
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/google/go-cmp/cmp"
 )
 
-func TestNewToken(t *testing.T) {
-	type args struct {
-		t *jwt.Token
-	}
+func TestTokenClaims(t *testing.T) {
 	tests := []struct {
-		name string
-		args args
-		want *Token
+		name      string
+		token     *jwt.Token
+		want      jwt.MapClaims
+		wantExist bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Valid claims",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"sub":   "1234567890",
+				"name":  "John Doe",
+				"admin": true,
+			}),
+			want: jwt.MapClaims{
+				"sub":   "1234567890",
+				"name":  "John Doe",
+				"admin": true,
+			},
+			wantExist: true,
+		},
+		{
+			name:      "No claims",
+			token:     jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{}),
+			want:      jwt.MapClaims{},
+			wantExist: true,
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewToken(tt.args.t); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewToken(%v) = %v, want %v", tt.args.t, got, tt.want)
+			token := NewToken(tt.token)
+			got, gotExist := token.Claims()
+			if !cmp.Equal(got, tt.want) || gotExist != tt.wantExist {
+				t.Errorf("Claims() got = %v, want = %v, gotExist = %v, wantExist = %v, diff: %v", got, tt.want, gotExist, tt.wantExist, cmp.Diff(got, tt.want))
 			}
 		})
 	}
 }
 
-func TestToken_ParseError(t *testing.T) {
-	type fields struct {
-		Token      *jwt.Token
-		parseError error
-	}
+func TestTokenGet(t *testing.T) {
 	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
+		name      string
+		token     *jwt.Token
+		key       string
+		want      interface{}
+		wantExist bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"sub": "1234567890",
+			}),
+			key:       "sub",
+			want:      "1234567890",
+			wantExist: true,
+		},
+		{
+			name: "Non-existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"sub": "1234567890",
+			}),
+			key:       "name",
+			want:      nil,
+			wantExist: false,
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tr := Token{
-				Token:      tt.fields.Token,
-				parseError: tt.fields.parseError,
-			}
-			if err := tr.ParseError(); (err != nil) != tt.wantErr {
-				t.Errorf("Token.ParseError() error = %v, wantErr %v", err, tt.wantErr)
+			token := NewToken(tt.token)
+			got, gotExist := token.Get(tt.key)
+			if !cmp.Equal(got, tt.want) || gotExist != tt.wantExist {
+				t.Errorf("Get() got = %v, want = %v, gotExist = %v, wantExist = %v, diff: %v", got, tt.want, gotExist, tt.wantExist, cmp.Diff(got, tt.want))
 			}
 		})
 	}
 }
 
-func TestToken_Claims(t *testing.T) {
-	type fields struct {
-		Token      *jwt.Token
-		parseError error
-	}
+func TestTokenGetString(t *testing.T) {
 	tests := []struct {
-		name       string
-		fields     fields
-		wantValue  jwt.MapClaims
-		wantExists bool
+		name  string
+		token *jwt.Token
+		key   string
+		want  string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"sub": "1234567890",
+			}),
+			key:  "sub",
+			want: "1234567890",
+		},
+		{
+			name: "Non-existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"sub": "1234567890",
+			}),
+			key:  "name",
+			want: "",
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tr := Token{
-				Token:      tt.fields.Token,
-				parseError: tt.fields.parseError,
-			}
-			gotValue, gotExists := tr.Claims()
-			if !reflect.DeepEqual(gotValue, tt.wantValue) {
-				t.Errorf("Token.Claims() gotValue = %v, want %v", gotValue, tt.wantValue)
-			}
-			if gotExists != tt.wantExists {
-				t.Errorf("Token.Claims() gotExists = %v, want %v", gotExists, tt.wantExists)
+			token := NewToken(tt.token)
+			got := token.GetString(tt.key)
+			if !cmp.Equal(got, tt.want) {
+				t.Errorf("GetString() got = %v, want = %v, diff: %v", got, tt.want, cmp.Diff(got, tt.want))
 			}
 		})
 	}
 }
 
-func TestToken_Get(t *testing.T) {
-	type fields struct {
-		Token      *jwt.Token
-		parseError error
-	}
-	type args struct {
-		key string
-	}
+func TestTokenGetBool(t *testing.T) {
 	tests := []struct {
-		name       string
-		fields     fields
-		args       args
-		wantValue  interface{}
-		wantExists bool
+		name  string
+		token *jwt.Token
+		key   string
+		want  bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"admin": true,
+			}),
+			key:  "admin",
+			want: true,
+		},
+		{
+			name: "Non-existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"admin": true,
+			}),
+			key:  "user",
+			want: false,
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tr := Token{
-				Token:      tt.fields.Token,
-				parseError: tt.fields.parseError,
-			}
-			gotValue, gotExists := tr.Get(tt.args.key)
-			if !reflect.DeepEqual(gotValue, tt.wantValue) {
-				t.Errorf("Token.Get(%v) gotValue = %v, want %v", tt.args.key, gotValue, tt.wantValue)
-			}
-			if gotExists != tt.wantExists {
-				t.Errorf("Token.Get(%v) gotExists = %v, want %v", tt.args.key, gotExists, tt.wantExists)
+			token := NewToken(tt.token)
+			got := token.GetBool(tt.key)
+			if !cmp.Equal(got, tt.want) {
+				t.Errorf("GetBool() got = %v, want = %v, diff: %v", got, tt.want, cmp.Diff(got, tt.want))
 			}
 		})
 	}
 }
 
-func TestToken_GetString(t *testing.T) {
-	type fields struct {
-		Token      *jwt.Token
-		parseError error
-	}
-	type args struct {
-		key string
-	}
+func TestTokenGetInt(t *testing.T) {
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		wantS  string
+		name  string
+		token *jwt.Token
+		key   string
+		want  int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"age": 30,
+			}),
+			key:  "age",
+			want: 30,
+		},
+		{
+			name: "Non-existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"age": 30,
+			}),
+			key:  "height",
+			want: 0,
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tr := Token{
-				Token:      tt.fields.Token,
-				parseError: tt.fields.parseError,
-			}
-			if gotS := tr.GetString(tt.args.key); gotS != tt.wantS {
-				t.Errorf("Token.GetString(%v) = %v, want %v", tt.args.key, gotS, tt.wantS)
+			token := NewToken(tt.token)
+			got := token.GetInt(tt.key)
+			if !cmp.Equal(got, tt.want) {
+				t.Errorf("GetInt() got = %v, want = %v, diff: %v", got, tt.want, cmp.Diff(got, tt.want))
 			}
 		})
 	}
 }
 
-func TestToken_GetBool(t *testing.T) {
-	type fields struct {
-		Token      *jwt.Token
-		parseError error
-	}
-	type args struct {
-		key string
-	}
+func TestTokenGetUint(t *testing.T) {
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		wantB  bool
+		name  string
+		token *jwt.Token
+		key   string
+		want  uint
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"points": uint(100),
+			}),
+			key:  "points",
+			want: uint(100),
+		},
+		{
+			name: "Non-existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"points": uint(100),
+			}),
+			key:  "level",
+			want: uint(0),
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tr := Token{
-				Token:      tt.fields.Token,
-				parseError: tt.fields.parseError,
-			}
-			if gotB := tr.GetBool(tt.args.key); gotB != tt.wantB {
-				t.Errorf("Token.GetBool(%v) = %v, want %v", tt.args.key, gotB, tt.wantB)
+			token := NewToken(tt.token)
+			got := token.GetUint(tt.key)
+			if !cmp.Equal(got, tt.want) {
+				t.Errorf("GetUint() got = %v, want = %v, diff: %v", got, tt.want, cmp.Diff(got, tt.want))
 			}
 		})
 	}
 }
 
-func TestToken_GetInt(t *testing.T) {
-	type fields struct {
-		Token      *jwt.Token
-		parseError error
-	}
-	type args struct {
-		key string
-	}
+func TestTokenGetFloat32(t *testing.T) {
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		wantI  int
+		name  string
+		token *jwt.Token
+		key   string
+		want  float32
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"rating": float32(4.5),
+			}),
+			key:  "rating",
+			want: float32(4.5),
+		},
+		{
+			name: "Non-existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"rating": float32(4.5),
+			}),
+			key:  "score",
+			want: float32(0),
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tr := Token{
-				Token:      tt.fields.Token,
-				parseError: tt.fields.parseError,
-			}
-			if gotI := tr.GetInt(tt.args.key); gotI != tt.wantI {
-				t.Errorf("Token.GetInt(%v) = %v, want %v", tt.args.key, gotI, tt.wantI)
+			token := NewToken(tt.token)
+			got := token.GetFloat32(tt.key)
+			if !cmp.Equal(got, tt.want) {
+				t.Errorf("GetFloat32() got = %v, want = %v, diff: %v", got, tt.want, cmp.Diff(got, tt.want))
 			}
 		})
 	}
 }
 
-func TestToken_GetInt64(t *testing.T) {
-	type fields struct {
-		Token      *jwt.Token
-		parseError error
-	}
-	type args struct {
-		key string
-	}
+func TestTokenGetFloat64(t *testing.T) {
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantI64 int64
+		name  string
+		token *jwt.Token
+		key   string
+		want  float64
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"rating": float64(4.5),
+			}),
+			key:  "rating",
+			want: float64(4.5),
+		},
+		{
+			name: "Non-existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"rating": float64(4.5),
+			}),
+			key:  "score",
+			want: float64(0),
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tr := Token{
-				Token:      tt.fields.Token,
-				parseError: tt.fields.parseError,
-			}
-			if gotI64 := tr.GetInt64(tt.args.key); gotI64 != tt.wantI64 {
-				t.Errorf("Token.GetInt64(%v) = %v, want %v", tt.args.key, gotI64, tt.wantI64)
+			token := NewToken(tt.token)
+			got := token.GetFloat64(tt.key)
+			if !cmp.Equal(got, tt.want) {
+				t.Errorf("GetFloat64() got = %v, want = %v, diff: %v", got, tt.want, cmp.Diff(got, tt.want))
 			}
 		})
 	}
 }
 
-func TestToken_GetUint(t *testing.T) {
-	type fields struct {
-		Token      *jwt.Token
-		parseError error
-	}
-	type args struct {
-		key string
-	}
+func TestTokenGetTime(t *testing.T) {
+	now := time.Now()
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		wantUi uint
+		name  string
+		token *jwt.Token
+		key   string
+		want  time.Time
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"exp": now,
+			}),
+			key:  "exp",
+			want: now,
+		},
+		{
+			name: "Non-existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"exp": now,
+			}),
+			key:  "iat",
+			want: time.Time{},
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tr := Token{
-				Token:      tt.fields.Token,
-				parseError: tt.fields.parseError,
-			}
-			if gotUi := tr.GetUint(tt.args.key); gotUi != tt.wantUi {
-				t.Errorf("Token.GetUint(%v) = %v, want %v", tt.args.key, gotUi, tt.wantUi)
+			token := NewToken(tt.token)
+			got := token.GetTime(tt.key)
+			if !cmp.Equal(got, tt.want) {
+				t.Errorf("GetTime() got = %v, want = %v, diff: %v", got, tt.want, cmp.Diff(got, tt.want))
 			}
 		})
 	}
 }
 
-func TestToken_GetUint64(t *testing.T) {
-	type fields struct {
-		Token      *jwt.Token
-		parseError error
-	}
-	type args struct {
-		key string
-	}
+func TestTokenGetDuration(t *testing.T) {
 	tests := []struct {
-		name     string
-		fields   fields
-		args     args
-		wantUi64 uint64
+		name  string
+		token *jwt.Token
+		key   string
+		want  time.Duration
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"timeout": time.Minute,
+			}),
+			key:  "timeout",
+			want: time.Minute,
+		},
+		{
+			name: "Non-existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"timeout": time.Minute,
+			}),
+			key:  "delay",
+			want: 0,
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tr := Token{
-				Token:      tt.fields.Token,
-				parseError: tt.fields.parseError,
-			}
-			if gotUi64 := tr.GetUint64(tt.args.key); gotUi64 != tt.wantUi64 {
-				t.Errorf("Token.GetUint64(%v) = %v, want %v", tt.args.key, gotUi64, tt.wantUi64)
+			token := NewToken(tt.token)
+			got := token.GetDuration(tt.key)
+			if !cmp.Equal(got, tt.want) {
+				t.Errorf("GetDuration() got = %v, want = %v, diff: %v", got, tt.want, cmp.Diff(got, tt.want))
 			}
 		})
 	}
 }
 
-func TestToken_GetFloat64(t *testing.T) {
-	type fields struct {
-		Token      *jwt.Token
-		parseError error
-	}
-	type args struct {
-		key string
-	}
+func TestTokenGetSlice(t *testing.T) {
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantF64 float64
+		name  string
+		token *jwt.Token
+		key   string
+		want  []interface{}
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"roles": []interface{}{"admin", "user"},
+			}),
+			key:  "roles",
+			want: []interface{}{"admin", "user"},
+		},
+		{
+			name: "Non-existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"roles": []interface{}{"admin", "user"},
+			}),
+			key:  "permissions",
+			want: nil,
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tr := Token{
-				Token:      tt.fields.Token,
-				parseError: tt.fields.parseError,
-			}
-			if gotF64 := tr.GetFloat64(tt.args.key); gotF64 != tt.wantF64 {
-				t.Errorf("Token.GetFloat64(%v) = %v, want %v", tt.args.key, gotF64, tt.wantF64)
+			token := NewToken(tt.token)
+			got := token.GetSlice(tt.key)
+			if !cmp.Equal(got, tt.want) {
+				t.Errorf("GetSlice() got = %v, want = %v, diff: %v", got, tt.want, cmp.Diff(got, tt.want))
 			}
 		})
 	}
 }
 
-func TestToken_GetTime(t *testing.T) {
-	type fields struct {
-		Token      *jwt.Token
-		parseError error
-	}
-	type args struct {
-		key string
-	}
+func TestTokenGetStringSlice(t *testing.T) {
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		wantTm time.Time
+		name  string
+		token *jwt.Token
+		key   string
+		want  []string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"roles": []string{"admin", "user"},
+			}),
+			key:  "roles",
+			want: []string{"admin", "user"},
+		},
+		{
+			name: "Non-existing key",
+			token: jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+				"roles": []interface{}{"admin", "user"},
+			}),
+			key:  "permissions",
+			want: nil,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tr := Token{
-				Token:      tt.fields.Token,
-				parseError: tt.fields.parseError,
-			}
-			if gotTm := tr.GetTime(tt.args.key); !reflect.DeepEqual(gotTm, tt.wantTm) {
-				t.Errorf("Token.GetTime(%v) = %v, want %v", tt.args.key, gotTm, tt.wantTm)
-			}
-		})
-	}
-}
 
-func TestToken_GetDuration(t *testing.T) {
-	type fields struct {
-		Token      *jwt.Token
-		parseError error
-	}
-	type args struct {
-		key string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		wantD  time.Duration
-	}{
-		// TODO: Add test cases.
-	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tr := Token{
-				Token:      tt.fields.Token,
-				parseError: tt.fields.parseError,
-			}
-			if gotD := tr.GetDuration(tt.args.key); gotD != tt.wantD {
-				t.Errorf("Token.GetDuration(%v) = %v, want %v", tt.args.key, gotD, tt.wantD)
-			}
-		})
-	}
-}
-
-func TestToken_GetSlice(t *testing.T) {
-	type fields struct {
-		Token      *jwt.Token
-		parseError error
-	}
-	type args struct {
-		key string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   []interface{}
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tr := Token{
-				Token:      tt.fields.Token,
-				parseError: tt.fields.parseError,
-			}
-			if got := tr.GetSlice(tt.args.key); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Token.GetSlice(%v) = %v, want %v", tt.args.key, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestToken_GetStringSlice(t *testing.T) {
-	type fields struct {
-		Token      *jwt.Token
-		parseError error
-	}
-	type args struct {
-		key string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		wantSs []string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tr := Token{
-				Token:      tt.fields.Token,
-				parseError: tt.fields.parseError,
-			}
-			if gotSs := tr.GetStringSlice(tt.args.key); !reflect.DeepEqual(gotSs, tt.wantSs) {
-				t.Errorf("Token.GetStringSlice(%v) = %v, want %v", tt.args.key, gotSs, tt.wantSs)
+			token := NewToken(tt.token)
+			got := token.GetStringSlice(tt.key)
+			if !cmp.Equal(got, tt.want) {
+				t.Errorf("GetStringSlice() got = %v, want = %v, diff: %v", got, tt.want, cmp.Diff(got, tt.want))
 			}
 		})
 	}
