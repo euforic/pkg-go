@@ -19,7 +19,7 @@ func Compare[K comparable](s1 []K, s2 []K) bool {
 	m1 := make(map[K]int)
 	m2 := make(map[K]int)
 
-	for i := 0; i < len(s1); i++ {
+	for i := range len(s1) {
 		// Add each value to map and increment for each found
 		m1[s1[i]]++
 		m2[s2[i]]++
@@ -36,34 +36,34 @@ func Compare[K comparable](s1 []K, s2 []K) bool {
 
 // OrderedCompare will check if two slices are equal, taking order into consideration.
 func OrderedCompare[K comparable](s1 []K, s2 []K) bool {
-	//If both are nil, they are equal
+	// If both are nil, they are equal
 	if s1 == nil && s2 == nil {
 		return true
 	}
 
-	//If only one is nil, they are not equal (!= represents XOR)
+	// If only one is nil, they are not equal (!= represents XOR)
 	if (s1 == nil) != (s2 == nil) {
 		return false
 	}
 
-	//If both are nil, they are equal
+	// If both are nil, they are equal
 	if s1 == nil || s2 == nil {
 		return false
 	}
 
-	//If the lengths are different, the slices are not equal
+	// If the lengths are different, the slices are not equal
 	if len(s1) != len(s2) {
 		return false
 	}
 
-	//Loop through and compare the slices at each index
-	for i := 0; i < len(s1); i++ {
+	// Loop through and compare the slices at each index
+	for i := range len(s1) {
 		if s2[i] != s1[i] {
 			return false
 		}
 	}
 
-	//If nothing has failed up to this point, the slices are equal
+	// If nothing has failed up to this point, the slices are equal
 	return true
 }
 
@@ -74,6 +74,7 @@ func Contains[K comparable](s []K, e K) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -82,7 +83,7 @@ func Reverse[K comparable](s []K) []K {
 	a := make([]K, len(s))
 	copy(a, s)
 
-	for i := len(a)/2 - 1; i >= 0; i-- {
+	for i := len(a)/2 - 1; i >= 0; i-- { //nolint:mnd
 		opp := len(a) - 1 - i
 		a[i], a[opp] = a[opp], a[i]
 	}
@@ -93,5 +94,6 @@ func Reverse[K comparable](s []K) []K {
 // FastContains offers a faster implementation of contains
 func FastContains(s []string, searchterm string) bool {
 	i := sort.SearchStrings(s, searchterm)
+
 	return i < len(s) && s[i] == searchterm
 }

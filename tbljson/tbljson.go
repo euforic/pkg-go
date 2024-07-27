@@ -1,10 +1,8 @@
-package main
+package tbljson
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 )
 
@@ -20,12 +18,13 @@ func TableToMapSlice(table string) ([]map[string]string, error) {
 		}
 		if len(header) == 0 {
 			header = fields
+
 			continue
 		}
 		rows = append(rows, fields)
 	}
 	if err := scanner.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading table: %w", err)
 	}
 
 	result := make([]map[string]string, len(rows))
@@ -40,30 +39,32 @@ func TableToMapSlice(table string) ([]map[string]string, error) {
 		}
 		result[i] = rowMap
 	}
+
 	return result, nil
 }
 
-func main() {
-	// Read from standard input
-	scanner := bufio.NewScanner(os.Stdin)
-	var output string
-	for scanner.Scan() {
-		output += scanner.Text() + "\n"
-	}
-	if err := scanner.Err(); err != nil {
-		panic(err)
-	}
-
-	// Convert the output to a map slice
-	mapSlice, err := TableToMapSlice(output)
-	if err != nil {
-		panic(err)
-	}
-
-	// Print the JSON output
-	jsonOutput, err := json.MarshalIndent(mapSlice, "", "  ")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(string(jsonOutput))
-}
+// func main() {
+// 	// Read from standard input
+// 	scanner := bufio.NewScanner(os.Stdin)
+// 	var output string
+// 	for scanner.Scan() {
+// 		output += scanner.Text() + "\n"
+// 	}
+// 	if err := scanner.Err(); err != nil {
+// 		panic(err)
+// 	}
+//
+// 	// Convert the output to a map slice
+// 	mapSlice, err := TableToMapSlice(output)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+//
+// 	// Print the JSON output
+// 	jsonOutput, err := json.MarshalIndent(mapSlice, "", "  ")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+//
+// 	fmt.Println(string(jsonOutput)) //nolint:forbidigo
+// }

@@ -13,9 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        directory: [./config, ./ethwallet, ./jwt, ./mapsi, ./ptype, ./rsa, ./sliceutil, ./tbljson ]
+        directory: [ethwallet, jwt, mapsi, ptype, rsa, sliceutil, tbljson ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6.0.1
         with:
@@ -23,7 +23,7 @@ jobs:
           version: latest
 
           # Optional: working directory, useful for monorepos
-          working-directory: ${{ matrix.directory }} 
+          working-directory: ./${{ matrix.directory }} 
 
           # Optional: golangci-lint command line arguments.
           # args: --issues-exit-code=0
